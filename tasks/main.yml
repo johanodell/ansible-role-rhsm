@@ -1,0 +1,25 @@
+---
+# tasks file for ansible-role-rhsm
+
+# Variable setup.
+- name: Include OS-Major version variables.
+  include_vars: "{{ ansible_distribution_major_version }}.yml"
+
+- name: Attach subscription
+  redhat_subscription:
+    state: present
+    username: "{{ rhsm_username }}"
+    password: "{{ rhsm_password }}"
+    pool_ids: "{{ rhsm_pool_id }}"
+  register: attachsub
+
+- name: Disable all RHSM repositories
+  rhsm_repository:
+    name: '*'
+    state: disabled
+  when: attachsub.changed and rhsm_disable_repos|bool == true
+
+- name: Enable a RHSM repository
+  rhsm_repository:
+    name: "{{ item }}"
+  with_items: "{{ rhsm_repos }}"
